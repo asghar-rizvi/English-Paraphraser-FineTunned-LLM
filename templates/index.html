@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PARA-PHRASER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin: 2rem 0;
+            color: #333;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .header p {
+            font-size: 1.2rem;
+            color: #666;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            width: 90%;
+            max-width: 1200px;
+        }
+        .text-box {
+            width: 45%;
+            height: 400px;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-size: 1rem;
+            line-height: 1.6;
+            position: relative;
+        }
+        #input-box {
+            background-color: #e3f2fd;
+            border: 2px solid #bbdefb;
+        }
+        #output-box {
+            background-color: #f1f8e9;
+            border: 2px solid #dcedc8;
+            overflow-y: auto;
+        }
+        textarea {
+            width: 100%;
+            height: calc(100% - 50px);
+            border: none;
+            resize: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+            outline: none;
+        }
+        .button-container {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        #paraphrase-btn {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #paraphrase-btn:hover {
+            background-color: #388e3c;
+        }
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: white;
+        }
+        .action-btn:hover {
+            opacity: 0.9;
+        }
+        #copy-btn {
+            background-color: #2196f3;
+        }
+        #delete-btn {
+            background-color: #f44336;
+        }
+        .counter {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(255,255,255,0.8);
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        color: #666;
+        }   
+        #prev-btn i {
+            color: #4caf50; /* Green for previous */
+        }
+
+        #next-btn i {
+            color: #4caf50; /* Green for next */
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Cognito Rewrite</h1>
+        <p>An LLM Powered Paraphraser</p>
+    </div>
+    
+    <div class="container">
+        <div class="text-box" id="input-box">
+            <textarea placeholder="Enter your text here..." id="input-text"></textarea>
+            <div class="button-container">
+                <button id="paraphrase-btn">PARAPHRASE</button>
+            </div>
+        </div>
+        
+        <div class="text-box" id="output-box">
+            <div id="output-text"></div>
+            <div class="button-container">
+                <button id="prev-btn" class="action-btn" title="Previous" style="display: none;">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button id="next-btn" class="action-btn" title="Next" style="display: none;">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <button id="copy-btn" class="action-btn" title="Copy">
+                    <i class="far fa-copy"></i>
+                </button>
+                <button id="delete-btn" class="action-btn" title="Delete">
+                    <i class="far fa-trash-alt"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentParaphrases = [];
+        let currentIndex = 0;
+
+        function updateCounter() {
+            const counter = document.createElement('div');
+            counter.className = 'counter';
+            counter.textContent = `Paraphrase ${currentIndex + 1} of ${currentParaphrases.length}`;
+            
+            // Clear existing counter if any
+            const existingCounter = document.querySelector('.counter');
+                if (existingCounter) {
+                    existingCounter.remove();
+            }
+    
+    document.getElementById('output-box').prepend(counter);
+}
+
+    document.getElementById('paraphrase-btn').addEventListener('click', async () => {
+    const inputText = document.getElementById('input-text').value.trim();
+    const outputBox = document.getElementById('output-text');
+    
+    if (!inputText) {
+        alert('Please enter some text to paraphrase');
+        return;
+    }
+    
+    outputBox.textContent = "Paraphrasing...";
+    
+    try {
+        const response = await fetch('/paraphrase', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `text=${encodeURIComponent(inputText)}`
+        });
+        
+        const result = await response.json();
+        console.log('API Response:', result);
+        
+        if (result.status === "error") {
+            outputBox.textContent = `Error: ${result.message}`;
+            outputBox.style.color = "#f44336";
+        } else if (result.data && result.data.paraphrased_texts && result.data.paraphrased_texts.length > 0) {
+            // Display the first paraphrase
+            outputBox.textContent = result.data.paraphrased_texts[0];
+            outputBox.style.color = "inherit";
+            
+            // Store all paraphrases for cycling
+            currentParaphrases = result.data.paraphrased_texts;
+            currentIndex = 0;
+            
+            // Show counter if multiple paraphrases exist
+            if (currentParaphrases.length > 1) {
+            updateCounter();
+            document.getElementById('next-btn').style.display = 'block';
+            document.getElementById('prev-btn').style.display = 'block';
+            } else {
+                document.getElementById('next-btn').style.display = 'none';
+                document.getElementById('prev-btn').style.display = 'none';
+            }
+
+        } else {
+            outputBox.textContent = "No paraphrases generated";
+            outputBox.style.color = "#f44336";
+        }
+    } catch (error) {
+        console.error('Fetch Error:', error);
+        outputBox.textContent = `Network Error: ${error.message}`;
+        outputBox.style.color = "#f44336";
+    }
+});
+        
+        document.getElementById('copy-btn').addEventListener('click', () => {
+            const outputText = document.getElementById('output-text').textContent;
+            if (outputText && outputText !== "Paraphrasing..." && !outputText.startsWith("Error")) {
+                navigator.clipboard.writeText(outputText)
+                    .then(() => alert('Text copied to clipboard!'))
+                    .catch(err => alert('Failed to copy text'));
+            } else {
+                alert('No valid text to copy');
+            }
+        });
+        
+        document.getElementById('delete-btn').addEventListener('click', () => {
+            document.getElementById('output-text').textContent = '';
+            document.getElementById('input-text').value = '';
+        });
+
+            document.getElementById('next-btn').addEventListener('click', () => {
+            currentIndex = (currentIndex + 1) % currentParaphrases.length;
+            document.getElementById('output-text').textContent = currentParaphrases[currentIndex];
+            updateCounter();
+        });
+
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            currentIndex = (currentIndex - 1 + currentParaphrases.length) % currentParaphrases.length;
+            document.getElementById('output-text').textContent = currentParaphrases[currentIndex];
+            updateCounter();
+        });
+
+        document.getElementById('next-btn').style.display = 
+            currentParaphrases.length > 1 ? 'block' : 'none';
+        document.getElementById('prev-btn').style.display = 
+            currentParaphrases.length > 1 ? 'block' : 'none';
+    </script>
+</body>
+</html>
