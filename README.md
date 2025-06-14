@@ -1,7 +1,7 @@
 # PARA-PHRASER: Fine-Tuned T5 Paraphrasing Model with LoRA
 
-![Demo Screenshot 1](./Output/1.png)
-![Demo Screenshot 2](./Output/2.png)
+![Demo Screenshot 1](/Ouput/1.png)
+![Demo Screenshot 2](/Ouput/2.png)
 
 ## 🔍 Overview
 
